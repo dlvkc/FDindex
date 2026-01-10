@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1456,10 +1456,7 @@ function addPath(attr, parent_path) {
 
 if (window.root_attr.upload === true) {
     document.querySelector('#upload').addEventListener('click', function (e) {
-        if (document.getElementById("progress-bar").style.display !== "none") {
-            return;
-        }
-        document.getElementById('fileInput').click();
+        openDialog();
     });
     document.querySelector('#new_folder').addEventListener('click', function (e) {
         if (document.getElementById("progress-bar").style.display !== "none") {
