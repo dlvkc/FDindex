@@ -1665,6 +1665,22 @@ function handleFileChange(event) {
     upload(file, name);
 }
 
+// ✅ 只监听 change 事件
+fileInput.addEventListener('change', handleFileChange);
+
+// 监听文件选择窗口关闭（用户取消选择）
+fileInput.addEventListener('click', () => {
+    const onFocus = () => {
+        // 文件窗口关闭，且没有选择文件
+        if (!fileInput.files || fileInput.files.length === 0) {
+                    document.getElementById('dialogOverlay').classList.add('hidden');
+        }
+        window.removeEventListener('focus', onFocus);
+    };
+
+    window.addEventListener('focus', onFocus);
+});
+
 document.getElementById('dialogOverlay').addEventListener('dragenter', function (event) {
     event.preventDefault();
 });
