@@ -1665,25 +1665,6 @@ function handleFileChange(event) {
     upload(file, name);
 }
 
-// 监听 input 的 change 事件
-fileInput.addEventListener('change', handleFileChange);
-
-// 当文件选择窗口关闭（用户取消或选择文件）检测 input
-fileInput.addEventListener('click', () => {
-    const dialog = document.getElementById('dialogOverlay');
-
-    // 使用一次性 window.focus 事件判断文件窗口是否关闭
-    const onFocus = () => {
-        // 文件窗口关闭
-        if (!fileInput.files || fileInput.files.length === 0) {
-            dialog.classList.add('hidden'); // 用户取消选择
-        }
-        window.removeEventListener('focus', onFocus);
-    };
-
-    window.addEventListener('focus', onFocus);
-});
-
 
 document.getElementById('dialogOverlay').addEventListener('dragenter', function (event) {
     event.preventDefault();
