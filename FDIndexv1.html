@@ -801,7 +801,7 @@ function toggleAnimation_upload(show,) {
         progress.classList.remove("sliding-bar-animation");
     } else {
         // progress_bar.style.display = "block";
-        progress.style.width = "10%";
+        progress.style.width = "30%";
         progress.classList.add("sliding-bar-animation");
     }
 }
@@ -1636,7 +1636,10 @@ function upload(file, name,) {
 
 function handleFileChange(event) {
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file) {
+        document.getElementById('dialogOverlay').classList.add('hidden');
+        return;
+    }
 
     let name = file.name;
 
