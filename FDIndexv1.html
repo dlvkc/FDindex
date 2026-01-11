@@ -1690,9 +1690,6 @@ function handleFileChange() {
     changeFired = true;          // 标记用户触发 change
     fileDialogOpened = false;     // 文件窗口生命周期结束
 
-     clearInterval(checkTimer);
-     checkTimer = null;
-
     // 用户取消选择
     if (!file) {
         document.getElementById('dialogOverlay').classList.add('hidden');
