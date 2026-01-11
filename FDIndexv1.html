@@ -1470,13 +1470,32 @@ function addPath(attr, parent_path) {
 
 
 if (window.root_attr.upload === true) {
-    document.querySelector('#upload').addEventListener('click', function (e) {
-        if (document.getElementById("progress-bar").style.display !== "none") {
-            return;
-        }
-        document.getElementById('fileInput').click();
-        openDialog();
-    });
+    
+    let fileDialogOpened = false; // 文件窗口是否打开
+    let changeFired = false;      // 是否触发了 change
+
+// 点击上传按钮
+document.querySelector('#upload').addEventListener('click', function () {
+    if (document.getElementById("progress-bar").style.display !== "none") {
+        return;
+    }
+
+    const fileInput = document.getElementById('fileInput');
+
+    // 文件窗口状态标记
+    fileDialogOpened = true;
+    changeFired = false;
+
+    // 打开 overlay / 初始化 UI
+    openDialog();
+
+    // 打开文件选择窗口
+    fileInput.value = '';
+    fileInput.click();
+   });
+
+
+    
     document.querySelector('#new_folder').addEventListener('click', function (e) {
         if (document.getElementById("progress-bar").style.display !== "none") {
             return;
@@ -1636,22 +1655,17 @@ function upload(file, name,) {
 
 const fileInput = document.getElementById('fileInput');
 
-
 function handleFileChange() {
     const file = fileInput.files[0];
 
-    // 用户取消（唯一可靠入口）
-    if (!file) {
-        document
-            .getElementById('dialogOverlay')
-            .classList.add('hidden');
-        return;
-    }
+    // 文件窗口生命周期结束
+    fileDialogOpened = false;
+    changeFired = true; // 用户触发了 change
 
-    let name = file.name;
+    // 用户取消不会触发 change，这里不处理
+    if (!file) return;
 
-    // === 文件名校验 ===
-    name = name.replace(/[/\\:*?"<>\r\n\t\f]|^[\s]+|[\s]+$/g, '');
+    let name = file.name.replace(/[/\\:*?"<>\r\n\t\f]|^[\s]+|[\s]+$/g, '');
     if (name.length === 0 || /^\.*$/.test(name)) return;
 
     for (let disallowedUploadElement of window.root_attr.disallowed_upload) {
@@ -1664,9 +1678,21 @@ function handleFileChange() {
         }
     }
 
-    // 🚀 上传
+    // 🚀 文件合法，上传
     upload(file, name);
 }
+
+// 文件窗口取消处理（focus 兜底）
+window.addEventListener('focus', () => {
+    if (fileDialogOpened && !changeFired) {
+        // 用户点击取消
+        document.getElementById('dialogOverlay').classList.add('hidden');
+    }
+
+    // 重置状态
+    fileDialogOpened = false;
+    changeFired = false;
+});
 
 
 
