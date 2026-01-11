@@ -1634,19 +1634,26 @@ function upload(file, name,) {
     xhr.send(file);
 }
 
-
 const fileInput = document.getElementById('fileInput');
 
-let fileDialogOpened = false; // 仅用于判断是否真的打开过文件窗口
+let fileDialogOpened = false;   // 是否点开过文件窗口
+let fileSelected = false;      // 本次是否真正选了文件
 
 function handleFileChange(event) {
     const file = fileInput.files[0];
 
-    // 用户取消选择
+    // change 触发，说明对话框已结束
+    fileDialogOpened = false;
+
+    // 用户取消选择（极少数浏览器会触发 change 但无文件）
     if (!file) {
-        document.getElementById('dialogOverlay').classList.add('hidden');
+        document
+            .getElementById('dialogOverlay')
+            .classList.add('hidden');
         return;
     }
+
+    fileSelected = true;
 
     let name = file.name;
 
@@ -1669,28 +1676,35 @@ function handleFileChange(event) {
 }
 
 
-// ===== 在打开文件窗口前标记 =====
+// ===== 打开文件窗口前标记 =====
 fileInput.addEventListener('click', () => {
     fileDialogOpened = true;
+    fileSelected = false;
 });
 
-// ===== 正常 change 监听 =====
+
+// ===== change 监听（唯一可信来源）=====
 fileInput.addEventListener('change', handleFileChange);
 
-// ===== 文件窗口关闭后回到页面 =====
+
+// ===== 文件窗口关闭（可能选也可能没选）=====
 window.addEventListener('focus', () => {
-    // 没触发 change，且没有文件 = 用户取消
-    if (
-        fileDialogOpened &&
-        (!fileInput.files || fileInput.files.length === 0)
-    ) {
-        document
-            .getElementById('dialogOverlay')
-            .classList.add('hidden');
+    if (!fileDialogOpened) return;
+
+    // 延迟到 change 有机会先执行
+    setTimeout(() => {
+        // 没有 change + 没有文件 = 用户取消
+        if (!fileSelected && (!fileInput.files || fileInput.files.length === 0)) {
+            document
+                .getElementById('dialogOverlay')
+                .classList.add('hidden');
+        }
 
         fileDialogOpened = false;
-    }
+        fileSelected = false;
+    }, 0);
 });
+
 
 
 document.getElementById('dialogOverlay').addEventListener('dragenter', function (event) {
