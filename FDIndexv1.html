@@ -1636,13 +1636,9 @@ function upload(file, name,) {
 
 const fileInput = document.getElementById('fileInput');
 
-let fileDialogOpened = false;
 
 function handleFileChange() {
     const file = fileInput.files[0];
-
-    // 文件窗口生命周期结束
-    fileDialogOpened = false;
 
     // 用户取消（唯一可靠入口）
     if (!file) {
@@ -1671,25 +1667,6 @@ function handleFileChange() {
     // 🚀 上传
     upload(file, name);
 }
-
-
-// ===== 打开文件窗口 =====
-fileInput.addEventListener('click', () => {
-    fileDialogOpened = true;
-});
-
-
-// ===== 唯一可信判断点 =====
-fileInput.addEventListener('change', handleFileChange);
-
-
-// ===== focus：只做状态清理，不碰 UI =====
-window.addEventListener('focus', () => {
-    if (!fileDialogOpened) return;
-
-    // 只重置状态
-    fileDialogOpened = false;
-});
 
 
 
