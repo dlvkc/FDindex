@@ -1482,17 +1482,30 @@ document.querySelector('#upload').addEventListener('click', function () {
 
     const fileInput = document.getElementById('fileInput');
 
-    // 文件窗口状态标记
-    fileDialogOpened = true;
-    changeFired = false;
-
     // 打开 overlay / 初始化 UI
     openDialog();
 
-    // 打开文件选择窗口
+    // 清空上一次选择
     fileInput.value = '';
+
+    // 打开文件窗口
     fileInput.click();
-   });
+
+    // 轮询检查是否取消
+    const checkCancel = setInterval(() => {
+        // 文件窗口关闭，且没有选择文件
+        if (fileDialogOpened && fileInput.files.length === 0) {
+            document.getElementById('dialogOverlay').classList.add('hidden');
+            fileDialogOpened = false;
+            changeFired = false;
+            clearInterval(checkCancel);
+        }
+    }, 200); // 每 200ms 检查一次
+
+    fileDialogOpened = true;
+    changeFired = false;
+});
+
 
 
     
