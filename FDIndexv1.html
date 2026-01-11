@@ -1470,17 +1470,16 @@ function addPath(attr, parent_path) {
 
 
 if (window.root_attr.upload === true) {
-    
-    let fileDialogOpened = false; // 文件窗口是否打开
-    let changeFired = false;      // 是否触发了 change
+// 全局状态
+let fileDialogOpened = false;  // 文件窗口是否打开
+let changeFired = false;       // input change 是否触发
+let checkTimer = null;         // 轮询定时器
 
 // 点击上传按钮
 document.querySelector('#upload').addEventListener('click', function () {
-    if (document.getElementById("progress-bar").style.display !== "none") {
-        return;
-    }
-
     const fileInput = document.getElementById('fileInput');
+
+    if (document.getElementById("progress-bar").style.display !== "none") return;
 
     // 打开 overlay / 初始化 UI
     openDialog();
@@ -1488,26 +1487,43 @@ document.querySelector('#upload').addEventListener('click', function () {
     // 清空上一次选择
     fileInput.value = '';
 
-    // 打开文件窗口
-    fileInput.click();
-
-    // 轮询检查是否取消
-    const checkCancel = setInterval(() => {
-        // 文件窗口关闭，且没有选择文件
-        if (fileDialogOpened && fileInput.files.length === 0) {
-            document.getElementById('dialogOverlay').classList.add('hidden');
-            fileDialogOpened = false;
-            changeFired = false;
-            clearInterval(checkCancel);
-        }
-    }, 200); // 每 200ms 检查一次
-
+    // 标记文件窗口状态
     fileDialogOpened = true;
     changeFired = false;
+
+    // 打开文件选择窗口
+    fileInput.click();
+
+    // 开启轮询检测文件窗口是否关闭
+    if (checkTimer) clearInterval(checkTimer);
+    checkTimer = setInterval(() => {
+        // === 第一步：判断文件窗口是否关闭 ===
+        // 文件窗口未关闭 → 什么都不做
+        if (!fileDialogOpened) return;
+
+        // 使用 document.hasFocus() 判断文件窗口是否关闭
+        // 如果页面获得焦点，说明文件窗口关闭了
+        if (!document.hasFocus()) return;
+
+        // === 第二步：文件窗口关闭后，判断 input 是否触发 change ===
+        const fileSelected = fileInput.files.length > 0;
+
+        if (fileSelected && changeFired) {
+            // 用户选择文件 → 上传流程已经在 change 中处理
+            clearInterval(checkTimer);
+            checkTimer = null;
+        } else if (!fileSelected && !changeFired) {
+            // 用户点击取消 → 隐藏 overlay
+            document.getElementById('dialogOverlay').classList.add('hidden');
+            clearInterval(checkTimer);
+            checkTimer = null;
+        }
+
+        // 重置状态
+        fileDialogOpened = false;
+        changeFired = false;
+    }, 200); // 每 200ms 检查一次
 });
-
-
-
     
     document.querySelector('#new_folder').addEventListener('click', function (e) {
         if (document.getElementById("progress-bar").style.display !== "none") {
@@ -1666,19 +1682,27 @@ function upload(file, name,) {
     xhr.send(file);
 }
 
-const fileInput = document.getElementById('fileInput');
-
+// 文件选择
 function handleFileChange() {
+    const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
 
-    // 文件窗口生命周期结束
-    fileDialogOpened = false;
-    changeFired = true; // 用户触发了 change
+    changeFired = true;          // 标记用户触发 change
+    fileDialogOpened = false;     // 文件窗口生命周期结束
 
-    // 用户取消不会触发 change，这里不处理
-    if (!file) return;
+     clearInterval(checkTimer);
+     checkTimer = null;
 
-    let name = file.name.replace(/[/\\:*?"<>\r\n\t\f]|^[\s]+|[\s]+$/g, '');
+    // 用户取消选择
+    if (!file) {
+        document.getElementById('dialogOverlay').classList.add('hidden');
+        return;
+    }
+
+    let name = file.name;
+
+    // === 文件名校验 ===
+    name = name.replace(/[/\\:*?"<>\r\n\t\f]|^[\s]+|[\s]+$/g, '');
     if (name.length === 0 || /^\.*$/.test(name)) return;
 
     for (let disallowedUploadElement of window.root_attr.disallowed_upload) {
@@ -1691,22 +1715,9 @@ function handleFileChange() {
         }
     }
 
-    // 🚀 文件合法，上传
+    // 🚀 文件合法，直接上传
     upload(file, name);
 }
-
-// 文件窗口取消处理（focus 兜底）
-window.addEventListener('focus', () => {
-    if (fileDialogOpened && !changeFired) {
-        // 用户点击取消
-        document.getElementById('dialogOverlay').classList.add('hidden');
-    }
-
-    // 重置状态
-    fileDialogOpened = false;
-    changeFired = false;
-});
-
 
 
 document.getElementById('dialogOverlay').addEventListener('dragenter', function (event) {
