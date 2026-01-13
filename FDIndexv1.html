@@ -1683,40 +1683,7 @@ function upload(file, name,) {
 }
 
 // 文件选择
-function handleFileChange() {
-    const fileInput = document.getElementById('fileInput');
-    const file = fileInput.files[0];
-
-    changeFired = true;          // 标记用户触发 change
-    fileDialogOpened = false;     // 文件窗口生命周期结束
-
-    // 用户取消选择
-    if (file) {
-        let label = document.getElementById('input-upload-file-name');
-        label.value = label.value.replace(/[/\\:*?"<>\r\n\t\f]|^[\s]+|[\s]+$/g, '');
-        let name = label.value;
-        if (name.length === 0) {
-            return;
-        }
-        if (/^\.*$/.test(name)) {
-            return;
-        }
-        for (let disallowedUploadElement of window.root_attr.disallowed_upload) {
-            if (!disallowedUploadElement.startsWith('.')) {
-                disallowedUploadElement = "." + disallowedUploadElement;
-            }
-            if (name.endsWith(disallowedUploadElement)) {
-                // fileInput.value = '';
-                // document.getElementById('input-upload-file-name').value = "";
-                alert(document.getElementById('tip-disallowed-upload').textContent);
-                return;
-            }
-        }
-        upload(file, name);
-    } else {
-        document.getElementById('dialogOverlay').classList.add('hidden');
-    }
-}
+function handleFileChange() { const fileInput = document.getElementById('fileInput'); const file = fileInput.files[0]; changeFired = true; // 标记用户触发 change fileDialogOpened = false; // 文件窗口生命周期结束 // 清除轮询 if (checkTimer) { clearInterval(checkTimer); checkTimer = null; } if (!file) return; // 用户取消 → 不上传 let name = file.name.replace(/[/\\:*?"<>\r\n\t\f]|^[\s]+|[\s]+$/g, ''); if (name.length === 0 || /^\.*$/.test(name)) return; for (let disallowedUploadElement of window.root_attr.disallowed_upload) { if (!disallowedUploadElement.startsWith('.')) disallowedUploadElement = "." + disallowedUploadElement; if (name.endsWith(disallowedUploadElement)) { alert(document.getElementById('tip-disallowed-upload').textContent); return; } } // 🚀 文件合法 → 上传 upload(file, name); }
 
 
 document.getElementById('dialogOverlay').addEventListener('dragenter', function (event) {
