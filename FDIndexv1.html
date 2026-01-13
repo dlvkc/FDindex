@@ -1691,29 +1691,31 @@ function handleFileChange() {
     fileDialogOpened = false;     // 文件窗口生命周期结束
 
     // 用户取消选择
-    if (!file) {
-        document.getElementById('dialogOverlay').classList.add('hidden');
-        return;
-    }
-
-    let name = file.name;
-
-    // === 文件名校验 ===
-    name = name.replace(/[/\\:*?"<>\r\n\t\f]|^[\s]+|[\s]+$/g, '');
-    if (name.length === 0 || /^\.*$/.test(name)) return;
-
-    for (let disallowedUploadElement of window.root_attr.disallowed_upload) {
-        if (!disallowedUploadElement.startsWith('.')) {
-            disallowedUploadElement = "." + disallowedUploadElement;
-        }
-        if (name.endsWith(disallowedUploadElement)) {
-            alert(document.getElementById('tip-disallowed-upload').textContent);
+    if (file) {
+        let label = document.getElementById('input-upload-file-name');
+        label.value = label.value.replace(/[/\\:*?"<>\r\n\t\f]|^[\s]+|[\s]+$/g, '');
+        let name = label.value;
+        if (name.length === 0) {
             return;
         }
+        if (/^\.*$/.test(name)) {
+            return;
+        }
+        for (let disallowedUploadElement of window.root_attr.disallowed_upload) {
+            if (!disallowedUploadElement.startsWith('.')) {
+                disallowedUploadElement = "." + disallowedUploadElement;
+            }
+            if (name.endsWith(disallowedUploadElement)) {
+                // fileInput.value = '';
+                // document.getElementById('input-upload-file-name').value = "";
+                alert(document.getElementById('tip-disallowed-upload').textContent);
+                return;
+            }
+        }
+        upload(file, name);
+    } else {
+        document.getElementById('dialogOverlay').classList.add('hidden');
     }
-
-    // 🚀 文件合法，直接上传
-    upload(file, name);
 }
 
 
