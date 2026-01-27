@@ -1702,7 +1702,10 @@ function handleFileChange() {
 
     // === 文件名校验 ===
     name = name.replace(/[/\\:*?"<>\r\n\t\f]|^[\s]+|[\s]+$/g, '');
-    if (name.length === 0 || /^\.*$/.test(name)) return;
+    if (name.length === 0 || /^\.*$/.test(name)) {
+        document.getElementById('dialogOverlay').classList.add('hidden');
+        return;
+    }
 
     for (let disallowedUploadElement of window.root_attr.disallowed_upload) {
         if (!disallowedUploadElement.startsWith('.')) {
@@ -1710,13 +1713,14 @@ function handleFileChange() {
         }
         if (name.endsWith(disallowedUploadElement)) {
             alert(document.getElementById('tip-disallowed-upload').textContent);
+            document.getElementById('dialogOverlay').classList.add('hidden');
             return;
         }
     }
 
     // 🚀 文件合法，直接上传
     upload(file, name);
-}
+} 
 
 
 document.getElementById('dialogOverlay').addEventListener('dragenter', function (event) {
