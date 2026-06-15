@@ -8,13 +8,11 @@
         html {
             overflow-y: scroll;
             background-color: #CEEACAFF;
-            height: 100%;
         }
 
         body {
             margin: 80px 0 0;
             font-family: Arial, sans-serif;
-            height: 100%;
         }
 
         .banner {
@@ -188,8 +186,8 @@
 
         .body {
             display: flex;
+            align-items: center;
             justify-content: center;
-            height: 100%;
         }
 
         .content {
@@ -197,7 +195,7 @@
             flex-direction: column;
             align-items: flex-start;
             width: 100%;
-            height: 97%;
+            max-width: 720px;
             padding: 0 14px 24px 14px;
             box-sizing: border-box;
         }
@@ -231,7 +229,7 @@
 
         .list-box {
             width: 100%;
-            height: 100%;
+            max-width: 720px;
             min-height: 400px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
             position: relative;
@@ -272,27 +270,15 @@
             left: 0;
             overflow: hidden;
             position: relative;
-            border-radius: 10px;
         }
 
         #progress-upload {
             height: 100%;
-            background-image: linear-gradient(45deg, #ff4545, #ff0095, #ff4545, #da00ff, #000aff);
+            background-color: #1976D2;
             width: 0%;
-            border-radius: 5px;
             /*!*animation: progressAnimation 2s infinite;*!*/
             /*animation: slidingBar-upload 1200ms infinite;*/
             /*animation-timing-function: cubic-bezier(0.2, 1, 0.8, 1);*/
-        }
-
-        #progress-upload::after {
-            content: "";
-            background-image: linear-gradient(45deg, #ff4545, #ff0095, #ff4545, #da00ff, #000aff);
-            width: 100%;
-            height: 100%;
-            display: block;
-            filter: blur(5px);
-            opacity: 10;
         }
 
         .sliding-bar-animation {
@@ -519,21 +505,21 @@
 
         .dialog-margin-top {
             width: 100%;
-            height: 17%;
+            height: 26%;
             pointer-events: none;
         }
 
         .dialog {
-            /*background-color: #CEEACA;*/
+            background-color: #CEEACA;
             padding: 20px;
             margin-left: 20px;
             margin-right: 20px;
             border-radius: 4px;
             border: 3px dashed #00000000;
-            width: 90%;
+            width: auto;
             min-width: 300px;
-            /*box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);*/
-            height: 75%;
+            max-width: 460px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
             /*transform: translateY(-30%);*/
         }
 
@@ -560,7 +546,7 @@
         div#upload-file-name {
             margin-top: 18px;
             gap: 10px;
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: flex-start;
             margin-right: 26px;
@@ -572,8 +558,6 @@
 
         input#input-upload-file-name {
             flex: 1;
-            border-radius: 5px;
-            border: none;
         }
 
         .hidden {
@@ -588,7 +572,7 @@
         }
 
         .upload-btn {
-            /*margin-top: 20px;
+            margin-top: 20px;
             padding: 10px;
             width: 100%;
             background-color: #1976D2;
@@ -596,8 +580,7 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            transition: transform 0.1s ease, background-color 0.1s ease;*/
-            display: none;
+            transition: transform 0.1s ease, background-color 0.1s ease;
         }
 
         .upload-btn:hover {
@@ -616,10 +599,8 @@
         }
 
         #tipbox-uploading-file-name {
-            margin-top: 6px;
-            font-size: 15px;
-            text-align: center;
-            color: #575757;
+            margin-bottom: 6px;
+            font-size: 14px;
         }
 
     </style>
@@ -718,7 +699,7 @@
     <div class="dialog-margin-top"></div>
     <div class="dialog" onclick="event.stopPropagation()">
         <div id="upload2select">
-            <input type="file" id="fileInput" style="display:none" onchange="handleFileChange(event)">
+            <input type="file" class="file-input" id="fileInput" onchange="handleFileChange(event)">
             <div id="upload-file-name">
                 <label for="input-upload-file-name" id="label-upload-file-name">名称</label>
                 <input id="input-upload-file-name" type="text" name="keyword"
@@ -729,16 +710,19 @@
             <div id="tipbox-disallowed-upload"><span id="tip-disallowed-upload"></span></div>
         </div>
         <div id="upload2progress">
+            <div id="tipbox-uploading-file-name"><span id="tip-uploading-file-name"></span>filename.icc</div>
             <div id="progress-bar-upload">
                 <div id="progress-upload" class="sliding-bar-animation"></div>
             </div>
-            <div id="tipbox-uploading-file-name"><span id="tip-uploading-file-name"></span>filename.icc</div>
         </div>
     </div>
 </div>
 <script>  <!--defer-->
 
 const FDIndex_version = null;
+const Types = Object.freeze({
+    google_drive: 1, cf_d1_kv: 2, deno_mysql: 3, // tidbcloud
+});
 
 window.root_attr = {
     "unique": true,
@@ -746,10 +730,17 @@ window.root_attr = {
     "type": null,
     "upload": true,
     "download": null,
+    "rename": null,
+    "move": null,
     "trash": null,
     "delete": null,
     "btn_goto_drive": null,
+    "auto_upload_after_drop": null,
     "disallowed_upload": "",
+
+    "can_trash": null,
+    "max_upload_size": -1,
+
 };
 
 window.root_attr.disallowed_upload = window.root_attr.disallowed_upload.split(/[；，、;\s]+/).map(decodeURIComponent).filter(i => i.trim() !== '');
@@ -768,9 +759,6 @@ if (_url.searchParams.get('theme') === "dark") {
 document.querySelector('#switch_theme').setAttribute('title', "切换主题");
 document.querySelector('#switch_theme').setAttribute("href", _url.toString());
 
-const Types = Object.freeze({
-    google_drive: 1,
-});
 
 const ItemTypes = Object.freeze({
     file: "file",
@@ -917,7 +905,7 @@ function addFile(attr) {
                 rename(e);
             });
         }
-        if (window.root_attr.trash === true) {
+        if (window.root_attr.trash === true && window.root_attr.can_trash === true) {
             _new__action.insertAdjacentHTML('beforeend', `
 <button class="item-action-trash" title="移至回收站">
     <i class="item-action-trash-icon"></i>
@@ -983,7 +971,7 @@ function addFile(attr) {
                 rename(e);
             });
         }
-        if (window.root_attr.trash === true) {
+        if (window.root_attr.trash === true && window.root_attr.can_trash === true) {
             _new__action.insertAdjacentHTML('beforeend', `
 <button class="item-action-trash" title="移至回收站">
     <i class="item-action-trash-icon"></i>
@@ -1062,6 +1050,11 @@ function addFile(attr) {
         _new__content.parent_path = document.querySelector('#home-click');
     }
     _new__content.addEventListener('dragstart', function (e) {
+        if (!window.root_attr["move"]) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
         if (e.target.classList.contains('item-content')) {
             draggedElement = e;
             // console.log("开始拖拽。", e.target, e.target.item_attr);
@@ -1472,61 +1465,12 @@ function addPath(attr, parent_path) {
 
 
 if (window.root_attr.upload === true) {
-// 全局状态
-let fileDialogOpened = false;  // 文件窗口是否打开
-let changeFired = false;       // input change 是否触发
-let checkTimer = null;         // 轮询定时器
-
-// 点击上传按钮
-document.querySelector('#upload').addEventListener('click', function () {
-    const fileInput = document.getElementById('fileInput');
-
-    if (document.getElementById("progress-bar").style.display !== "none") return;
-
-    // 打开 overlay / 初始化 UI
-    openDialog();
-
-    // 清空上一次选择
-    fileInput.value = '';
-
-    // 标记文件窗口状态
-    fileDialogOpened = true;
-    changeFired = false;
-
-    // 打开文件选择窗口
-    fileInput.click();
-
-    // 开启轮询检测文件窗口是否关闭
-    if (checkTimer) clearInterval(checkTimer);
-    checkTimer = setInterval(() => {
-        // === 第一步：判断文件窗口是否关闭 ===
-        // 文件窗口未关闭 → 什么都不做
-        if (!fileDialogOpened) return;
-
-        // 使用 document.hasFocus() 判断文件窗口是否关闭
-        // 如果页面获得焦点，说明文件窗口关闭了
-        if (!document.hasFocus()) return;
-
-        // === 第二步：文件窗口关闭后，判断 input 是否触发 change ===
-        const fileSelected = fileInput.files.length > 0;
-
-        if (fileSelected && changeFired) {
-            // 用户选择文件 → 上传流程已经在 change 中处理
-            clearInterval(checkTimer);
-            checkTimer = null;
-        } else if (!fileSelected && !changeFired) {
-            // 用户点击取消 → 隐藏 overlay
-            document.getElementById('dialogOverlay').classList.add('hidden');
-            clearInterval(checkTimer);
-            checkTimer = null;
+    document.querySelector('#upload').addEventListener('click', function (e) {
+        if (document.getElementById("progress-bar").style.display !== "none") {
+            return;
         }
-
-        // 重置状态
-        fileDialogOpened = false;
-        changeFired = false;
-    }, 500); // 每 200ms 检查一次
-});
-    
+        openDialog();
+    });
     document.querySelector('#new_folder').addEventListener('click', function (e) {
         if (document.getElementById("progress-bar").style.display !== "none") {
             return;
@@ -1633,6 +1577,13 @@ function toggleUploadButton() {
     uploadBtn.disabled = false;
 }
 
+function handleFileChange(event) {
+    const file = event.target.files[0];
+    toggleUploadButton();
+    document.getElementById('input-upload-file-name').value = file.name;
+}
+
+
 function upload(file, name,) {
     toggleAnimation_upload(false);
     document.getElementById("tipbox-uploading-file-name").textContent = name;
@@ -1684,44 +1635,40 @@ function upload(file, name,) {
     xhr.send(file);
 }
 
-// 文件选择
-function handleFileChange() {
+function uploadFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
-
-    changeFired = true;          // 标记用户触发 change
-    fileDialogOpened = false;     // 文件窗口生命周期结束
-
-    // 用户取消选择
-    if (!file) {
-        document.getElementById('dialogOverlay').classList.add('hidden');
-        return;
-    }
-
-    let name = file.name;
-
-    // === 文件名校验 ===
-    name = name.replace(/[/\\:*?"<>\r\n\t\f]|^[\s]+|[\s]+$/g, '');
-    if (name.length === 0 || /^\.*$/.test(name)) {
-        document.getElementById('dialogOverlay').classList.add('hidden');
-        return;
-    }
-
-    for (let disallowedUploadElement of window.root_attr.disallowed_upload) {
-        if (!disallowedUploadElement.startsWith('.')) {
-            disallowedUploadElement = "." + disallowedUploadElement;
-        }
-        if (name.endsWith(disallowedUploadElement)) {
-            alert(document.getElementById('tip-disallowed-upload').textContent);
-            document.getElementById('dialogOverlay').classList.add('hidden');
+    if (file) {
+        let label = document.getElementById('input-upload-file-name');
+        label.value = label.value.replace(/[/\\:*?"<>\r\n\t\f]|^[\s]+|[\s]+$/g, '');
+        let name = label.value;
+        if (name.length === 0) {
             return;
         }
+        if (/^\.*$/.test(name)) {
+            return;
+        }
+        for (let disallowedUploadElement of window.root_attr.disallowed_upload) {
+            if (!disallowedUploadElement.startsWith('.')) {
+                disallowedUploadElement = "." + disallowedUploadElement;
+            }
+            if (name.endsWith(disallowedUploadElement)) {
+                // fileInput.value = '';
+                // document.getElementById('input-upload-file-name').value = "";
+                alert(document.getElementById('tip-disallowed-upload').textContent);
+                return;
+            }
+        }
+        if (root_attr.max_upload_size > 0 && file.size >= root_attr.max_upload_size * 1024 * 1024) {
+            alert(`单文件大小限制为${root_attr.max_upload_size}MB。`);
+            return;
+        }
+
+        upload(file, name);
+    } else {
+        toggleUploadButton();
     }
-
-    // 🚀 文件合法，直接上传
-    upload(file, name);
-} 
-
+}
 
 document.getElementById('dialogOverlay').addEventListener('dragenter', function (event) {
     event.preventDefault();
@@ -1768,7 +1715,6 @@ dialog.addEventListener('dragover', (event) => {
 });
 
 dialog.addEventListener('dragleave', () => {
-    document.getElementById('dialogOverlay').classList.add('hidden');
     dialog.style.border = "3px dashed #00000000";
 });
 
@@ -1802,6 +1748,11 @@ dialog.addEventListener('drop', (event) => {
         dataTransfer.items.add(validFiles[0]);
         fileInput.files = dataTransfer.files;
         handleFileChange({target: fileInput});
+
+        if (root_attr.auto_upload_after_drop) {
+            document.getElementById('uploadBtn').click();
+        }
+
     } else {
         fileInput.value = '';
         document.getElementById('input-upload-file-name').value = "";
